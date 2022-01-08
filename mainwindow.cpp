@@ -1,7 +1,10 @@
 ﻿#include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include <QFileDialog>
+#include <QDesktopWidget>
+
 #include "videoplayer.h"
+#include "iowidget.h"
 
 ///
 /// 1. 导入视频播放
@@ -14,8 +17,26 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
-    m_player = new VideoPlayer();
+    this->centralWidget()->layout()->setMargin(0);
 
+    QDesktopWidget *screenResolution = QApplication::desktop();
+
+    iow = new IOWidget(this);
+
+//    int appWindowWidth = iow->geometry().width();
+//    int appWindowHeight = iow->geometry().height();
+
+//    int center_y = screenResolution->height()/2 - appWindowHeight/2;
+//    int center_x = screenResolution->width()/2 - appWindowWidth/2;
+
+    //TODO: 界面上添加IO用于导入导出
+//    iow->setGeometry(center_x, center_y,
+//                            appWindowWidth, appWindowHeight);
+    iow->raise();
+
+    ui->openGLWidget->Play();
+
+    m_player = new VideoPlayer();
 
 }
 
@@ -36,7 +57,7 @@ void MainWindow::on_openFileBtn_clicked()
 
     m_player->Play();
 
-    ui->playWidget->setCurrentWidget(ui->videoPage);
-    ui->openGLWidget->Play();
+//    ui->playWidget->setCurrentWidget(ui->videoPage);
+//    ui->playWidget->show();
 }
 

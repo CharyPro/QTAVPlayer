@@ -33,9 +33,11 @@ private:
     GLuint tex_uniform[3] = {0};
     GLuint texs[3];
 
-    int m_width, m_height;
+//    int m_width, m_height;
+    int m_width = 240;
+    int m_height = 128;
     //材质内存空间
-    unsigned char *datas[3] = { 0 };
+    char *datas[3] = { 0 };
 };
 
 #endif // COPENGLWIDGET_H

@@ -10,6 +10,7 @@ CONFIG += c++11
 
 SOURCES += \
     copenglwidget.cpp \
+    iowidget.cpp \
     main.cpp \
     mainwindow.cpp \
     videoplayer.cpp \
@@ -17,6 +18,7 @@ SOURCES += \
 
 HEADERS += \
     copenglwidget.h \
+    iowidget.h \
     mainwindow.h \
     videoplayer.h \
     videoslider.h
@@ -33,9 +35,11 @@ win32{
     FFMPEG_HOME = D:/3thlibrary/ffmpeg
 }
 INCLUDEPATH += $${FFMPEG_HOME}/include
-LIBS += -L$${FFMPEG_HOME}/lib/win64/ -lavdevice \
-    -lavformat \
-    -lavutil
-
+LIBS += -L$${FFMPEG_HOME}/lib/win64 \
+            -lavcodec \
+            -lavformat \
+            -lavutil \
+            -lswresample \
+            -lswscale
 RESOURCES += \
     res.qrc

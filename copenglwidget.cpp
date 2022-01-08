@@ -59,26 +59,15 @@ void COpenGLWidget::Play()
 
 void COpenGLWidget::paintGL()
 {
-//    if(!playStatus)
-//        return;
+    if(!playStatus)
+        return;
 
-    qDebug() << __FUNCTION__;
+    if(m_fp.atEnd())
+        return;//m_fp.seek(0);
 
-//    if(m_fp.atEnd())
-//        return;//m_fp.seek(0);
-
-//    m_fp.read(datas[0], m_width*m_height);
-//    m_fp.read(datas[1], m_width*m_height/4);
-//    m_fp.read(datas[2], m_width*m_height/4);
-
-    if (feof(fp))
-    {
-        fseek(fp, 0, SEEK_SET);
-    }
-
-    fread(datas[0], 1, m_width*m_height, fp);
-    fread(datas[1], 1, m_width*m_height/4, fp);
-    fread(datas[2], 1, m_width*m_height/4, fp);
+    m_fp.read(datas[0], m_width*m_height);
+    m_fp.read(datas[1], m_width*m_height/4);
+    m_fp.read(datas[2], m_width*m_height/4);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texs[0]); //0层绑定到Y材质
@@ -110,10 +99,10 @@ void COpenGLWidget::initializeGL()
 {
     initializeOpenGLFunctions();//初始化opengl
 
-//    qDebug() << m_program.addShaderFromSourceFile(QGLShader::Vertex, ":/shader/shapes.vert");
-//    qDebug() << m_program.addShaderFromSourceFile(QGLShader::Fragment, ":/shader/shapes.frag");
-    qDebug() << m_program.addShaderFromSourceCode(QGLShader::Vertex, vstring);
-    qDebug() << m_program.addShaderFromSourceCode(QGLShader::Fragment, tstring);
+    qDebug() << m_program.addShaderFromSourceFile(QGLShader::Vertex, ":/shader/shapes.vert");
+    qDebug() << m_program.addShaderFromSourceFile(QGLShader::Fragment, ":/shader/shapes.frag");
+//    qDebug() << m_program.addShaderFromSourceCode(QGLShader::Vertex, vstring);
+//    qDebug() << m_program.addShaderFromSourceCode(QGLShader::Fragment, tstring);
     qDebug() << "program.link:" << m_program.link();
 
     //设置顶点坐标变量
@@ -178,18 +167,13 @@ void COpenGLWidget::initializeGL()
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, m_width / 2, m_height / 2, 0, GL_RED, GL_UNSIGNED_BYTE, 0);
 
     ///分配材质内存空间
-    datas[0] = new unsigned char[m_width*m_height];		//Y
-    datas[1] = new unsigned char[m_width*m_height/4];	//U
-    datas[2] = new unsigned char[m_width*m_height/4];	//V
+    datas[0] = new char[m_width*m_height];		//Y
+    datas[1] = new char[m_width*m_height/4];	//U
+    datas[2] = new char[m_width*m_height/4];	//V
 
-    fp = fopen("D:/Codes/QT/QtOpenGL/out240x128.yuv","rb");
-    if (!fp)
-    {
+    m_fp.setFileName("D:/Codes/QT/QtOpenGL/out240x128.yuv");
+    if(!m_fp.open(QFile::ReadOnly))
         qDebug() << "out240x128.yuv file open failed!";
-    }
-//    m_fp.setFileName("D:/Codes/QT/QtOpenGL/out240x128.yuv");
-//    if(!m_fp.open(QFile::ReadOnly))
-//        qDebug() << "out240x128.yuv file open failed!";
 
     //启动定时器
     QTimer *ti = new QTimer(this);

@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 class VideoPlayer;
+class IOWidget;
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -22,6 +23,7 @@ public slots:
 private:
     Ui::MainWindow *ui;
 
+    IOWidget *iow;
     VideoPlayer *m_player;
 };
 #endif // MAINWINDOW_H

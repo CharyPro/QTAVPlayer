@@ -1,6 +1,4 @@
-﻿
-#version 330 core
-varying vec2 textureOut;
+﻿varying vec2 textureOut;
 uniform sampler2D   tex_y;
 uniform sampler2D   tex_u;
 uniform sampler2D   tex_v;
