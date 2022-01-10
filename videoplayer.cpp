@@ -1,18 +1,17 @@
 ﻿#include "videoplayer.h"
 
 #include <QDebug>
+#include "videothread.h"
+#include "audiothread.h"
+#include "codecformatspec.h"
+#include "demux.h"
 
 extern "C" {
-#include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
-#include <libavutil/avutil.h>
-#include <libswresample/swresample.h>
-#include <libswscale/swscale.h>
 }
-
 VideoPlayer::VideoPlayer()
 {
-    InitValue();
+
 }
 
 void VideoPlayer::SetFileName(QString name)
@@ -20,67 +19,52 @@ void VideoPlayer::SetFileName(QString name)
     m_filename = name;
 }
 
+
+
 void VideoPlayer::Play()
 {
     // 1. 解封装
+    m_demux = new Demux();
+    if (!m_demux->Open(m_filename))
+        return;
+    qDebug() << "Demux Open Success";
+
+    //初始化解码器
+    m_vt = new VideoThread();
+//    m_at = new AudioThread();
+
+    VideoSwsSpec *outputVSpec = new VideoSwsSpec();
+
+    bool re = m_vt->Init(m_demux->CopyVideoPara(), outputVSpec, m_videoDevice);
+    if (!re)
+        return;
+    qDebug() << "VideoThread Init Success";
 
 
-    // 2.
+    // 2. 开始解封装-》解码-》显示
+    this->start();
+
 }
 
-void VideoPlayer::InitValue()
+void VideoPlayer::run()
 {
-    m_fmtCtx = nullptr;
-}
+    while (1) {
+        // 1.获取解封装后的pkt
+        AVPacket *pkt = m_demux->ReadPkt();
+        if(!pkt || pkt->size == 0) {
+            break; // 没有数据了
+        }
 
-void VideoPlayer::Demux()
-{
-    // 1.
-    // 传递给输入设备的参数
-    AVDictionary *options = nullptr;
-//    av_dict_set(&options, "video_size", "640x480", 0);
-//    av_dict_set(&options, "pixel_format", "yuyv422", 0);
-//    av_dict_set(&options, "framerate", "30", 0);
+        // 2. 处理解封装后的数据
+        // 如果要导出，在此处调用重新封装的函数
 
-    int ret = avformat_open_input(&m_fmtCtx, m_filename.toLocal8Bit(), nullptr, &options);
-    if (ret < 0) {
-        char errbuf[1024];
-        av_strerror(ret, errbuf, sizeof (errbuf));
-        qDebug() << __FUNCTION__ << " error: " << errbuf;
-        return;
-    }
+        // 解码，播放
+        // 发送pkt到解码线程
+        if (m_demux->GetPktType(pkt) == Demux::AUDIO_TYPE) {
 
-    // 2.
-    ret = avformat_find_stream_info(m_fmtCtx, nullptr);
-    if (ret < 0) {
-        char errbuf[1024];
-        av_strerror(ret, errbuf, sizeof (errbuf));
-        qDebug() << __FUNCTION__ << " error: " << errbuf;
-        return;
-    }
-
-    av_dump_format(m_fmtCtx, 0, m_filename.toLocal8Bit(), 0);
-
-
-    // Demux Thread
-    AVPacket pkt;
-    while(1) {
-
-        ret = av_read_frame(m_fmtCtx, &pkt);
-        if(ret == 0) { // Success
-            if(pkt.stream_index ) { // video
-
-            } else if(pkt.stream_index) { //audio
-
-            } else {
-                av_packet_unref(&pkt);
-            }
-        } else if(ret == AVERROR_EOF) { // EOF
-
+        } else if(m_demux->GetPktType(pkt) == Demux::VIDEO_TYPE) {
+            m_vt->Push(pkt);
         } else {
-            char errbuf[1024];
-            av_strerror(ret, errbuf, sizeof (errbuf));
-            qDebug() << __FUNCTION__ << " error: " << errbuf;
             continue;
         }
     }

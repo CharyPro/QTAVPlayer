@@ -34,10 +34,11 @@ MainWindow::MainWindow(QWidget *parent)
 //                            appWindowWidth, appWindowHeight);
     iow->raise();
 
-    ui->openGLWidget->Play();
+//    ui->openGLWidget->Play();
 
     m_player = new VideoPlayer();
-
+    m_player->SetFileName("G:\\Resource\\Room.mp4");
+    m_player->Play();
 }
 
 MainWindow::~MainWindow()
@@ -55,7 +56,7 @@ void MainWindow::on_openFileBtn_clicked()
 
     m_player->SetFileName(filename);
 
-    m_player->Play();
+
 
 //    ui->playWidget->setCurrentWidget(ui->videoPage);
 //    ui->playWidget->show();

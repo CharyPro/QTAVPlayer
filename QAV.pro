@@ -9,19 +9,31 @@ CONFIG += c++11
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    audiothread.cpp \
     copenglwidget.cpp \
+    decode.cpp \
+    demux.cpp \
     iowidget.cpp \
     main.cpp \
     mainwindow.cpp \
     videoplayer.cpp \
-    videoslider.cpp
+    videorescale.cpp \
+    videoslider.cpp \
+    videothread.cpp
 
 HEADERS += \
+    IVideoDevice.h \
+    audiothread.h \
+    codecformatspec.h \
     copenglwidget.h \
+    decode.h \
+    demux.h \
     iowidget.h \
     mainwindow.h \
     videoplayer.h \
-    videoslider.h
+    videorescale.h \
+    videoslider.h \
+    videothread.h
 
 FORMS += \
     mainwindow.ui

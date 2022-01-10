@@ -1,26 +1,36 @@
 ﻿#ifndef VIDEOPLAYER_H
 #define VIDEOPLAYER_H
 
-#include <QObject>
+#include <QThread>
 class AVFormatContext;
 class AVStream;
-class VideoPlayer : public QObject
+class Demux;
+class VideoThread;
+class AudioThread;
+class IVideoDevice;
+
+class VideoPlayer : public QThread
 {
+    Q_OBJECT
+
 public:
     VideoPlayer();
 
     void SetFileName(QString name);
 
     void Play();
+protected:
+    virtual void run() Q_DECL_OVERRIDE;
 
 private:
-    void InitValue();
-    void Demux();
+    Demux *m_demux;
 
     QString m_filename;
-    AVFormatContext* m_fmtCtx;
 
-    AVStream *m_stream;
+    VideoThread* m_vt;
+    AudioThread* m_at;
+
+    IVideoDevice* m_videoDevice;
 };
 
 #endif // VIDEOPLAYER_H
