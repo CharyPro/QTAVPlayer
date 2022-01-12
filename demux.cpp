@@ -101,8 +101,11 @@ AVCodecParameters* Demux::CopyVideoPara()
 {
     //Allocate a new AVCodecParameters and set its fields to default values.  must free avcodec_parameters_free()
     AVCodecParameters *p = avcodec_parameters_alloc();
-    avcodec_parameters_copy(p, m_fmtCtx->streams[m_vStreamIndex]->codecpar);
-
+    if(avcodec_parameters_copy(p, m_fmtCtx->streams[m_vStreamIndex]->codecpar) < 0) {
+        qDebug() << "avcodec_parameters_copy failed";
+        return nullptr;
+    }
+    qDebug() << __FUNCTION__ << p->codec_id;
     return p;
 }
 /**

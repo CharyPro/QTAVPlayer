@@ -13,7 +13,7 @@
 VideoThread::VideoThread()
     :m_StopStatus(false)
 {
-
+    m_decode = nullptr;
 }
 
 
@@ -36,7 +36,6 @@ bool VideoThread::Init(AVCodecParameters *par, VideoSwsSpec* outSpec, IVideoDevi
         re = false;
         qDebug() << "InitSws :" << ret;
     }
-
 
     /// 显示窗口  videoDevice
     if (videoDevice) {
@@ -106,9 +105,9 @@ void VideoThread::run()
             ret = m_vs->SwsScale(frame, outFrame);
             if (ret < 0)
                 continue;
-
-            if(m_videoDevice)
-                m_videoDevice->Repaint(outFrame);
+            qDebug() << "Prepare Repaint";
+//            if(m_videoDevice)
+//                m_videoDevice->Repaint(outFrame);
         }
     }
 }

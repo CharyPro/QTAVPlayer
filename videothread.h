@@ -7,8 +7,8 @@
 
 
 class Decode;
-class AVCodecParameters;
-class VideoSwsSpec;
+struct AVCodecParameters;
+struct VideoSwsSpec;
 class IVideoDevice;
 class VideoReScale;
 struct AVPacket;

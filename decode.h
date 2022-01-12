@@ -1,19 +1,18 @@
 ﻿#ifndef DECODE_H
 #define DECODE_H
 
-class AVCodecParameters;
-class AVCodec;
-class AVCodecContext;
-class AudioSwrSpec;
-class VideoSwsSpec;
+struct AVCodecParameters;
+struct AVCodecContext;
+struct AudioSwrSpec;
+struct VideoSwsSpec;
 struct AVPacket;
 struct AVFrame;
+struct AVCodec;
 
 class Decode
 {
 public:
     Decode();
-
 
     /**
      * @brief Decode::Open  根据配置参数初始化并打开解码器
@@ -48,6 +47,7 @@ public:
     AVFrame* RecvFrame();
 
 private:
+
     AVCodec* m_codec;
 
     AVCodecContext* m_decodeCtx;

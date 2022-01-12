@@ -11,15 +11,16 @@ extern "C" {
 }
 VideoPlayer::VideoPlayer()
 {
-
+    m_vt = nullptr;
+    m_at = nullptr;
+    m_demux = nullptr;
+    m_videoDevice = nullptr;
 }
 
 void VideoPlayer::SetFileName(QString name)
 {
     m_filename = name;
 }
-
-
 
 void VideoPlayer::Play()
 {
@@ -31,11 +32,23 @@ void VideoPlayer::Play()
 
     //初始化解码器
     m_vt = new VideoThread();
-//    m_at = new AudioThread();
+    m_at = new AudioThread();
+
+    AudioSwrSpec *outputASpec = (struct AudioSwrSpec *)malloc(sizeof(struct AudioSwrSpec));
+    outputASpec->sampleFmt = AV_SAMPLE_FMT_S16;
+    outputASpec->sampleRate = 44100;
+    outputASpec->chLayout = AV_CH_LAYOUT_STEREO;
+    outputASpec->chs = av_get_channel_layout_nb_channels(outputASpec->chLayout);
+
+    bool re = m_at->Init(m_demux->CopyAudioPara(), outputASpec);
+    if (!re) {
+        return;
+    }
+    qDebug() << "AudioThread Init Success";
 
     VideoSwsSpec *outputVSpec = new VideoSwsSpec();
 
-    bool re = m_vt->Init(m_demux->CopyVideoPara(), outputVSpec, m_videoDevice);
+    re = m_vt->Init(m_demux->CopyVideoPara(), outputVSpec, m_videoDevice);
     if (!re)
         return;
     qDebug() << "VideoThread Init Success";
@@ -48,6 +61,9 @@ void VideoPlayer::Play()
 
 void VideoPlayer::run()
 {
+    m_vt->start();
+    m_at->start();
+
     while (1) {
         // 1.获取解封装后的pkt
         AVPacket *pkt = m_demux->ReadPkt();
@@ -61,9 +77,11 @@ void VideoPlayer::run()
         // 解码，播放
         // 发送pkt到解码线程
         if (m_demux->GetPktType(pkt) == Demux::AUDIO_TYPE) {
+            qDebug() << "Audio Packet";
 
         } else if(m_demux->GetPktType(pkt) == Demux::VIDEO_TYPE) {
-            m_vt->Push(pkt);
+            qDebug() << "Video Packet";
+//            m_vt->Push(pkt);
         } else {
             continue;
         }

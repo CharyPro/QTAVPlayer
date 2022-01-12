@@ -18,7 +18,7 @@ public:
     ~MainWindow();
 
 public slots:
-    void on_openFileBtn_clicked();
+    void openFileBtn_clicked();
 
 private:
     Ui::MainWindow *ui;

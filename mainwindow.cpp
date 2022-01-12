@@ -22,6 +22,7 @@ MainWindow::MainWindow(QWidget *parent)
     QDesktopWidget *screenResolution = QApplication::desktop();
 
     iow = new IOWidget(this);
+    iow->raise();
 
 //    int appWindowWidth = iow->geometry().width();
 //    int appWindowHeight = iow->geometry().height();
@@ -32,13 +33,12 @@ MainWindow::MainWindow(QWidget *parent)
     //TODO: 界面上添加IO用于导入导出
 //    iow->setGeometry(center_x, center_y,
 //                            appWindowWidth, appWindowHeight);
-    iow->raise();
 
 //    ui->openGLWidget->Play();
-
+    ui->muteBtn->setEnabled(true);
+    connect(ui->muteBtn, SIGNAL(clicked()), this, SLOT(openFileBtn_clicked()));
     m_player = new VideoPlayer();
-    m_player->SetFileName("G:\\Resource\\Room.mp4");
-    m_player->Play();
+
 }
 
 MainWindow::~MainWindow()
@@ -46,7 +46,7 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::on_openFileBtn_clicked()
+void MainWindow::openFileBtn_clicked()
 {
     QString filename = QFileDialog::getOpenFileName(nullptr,
                        QStringLiteral("选择多媒体文件"),
@@ -54,9 +54,10 @@ void MainWindow::on_openFileBtn_clicked()
                        QStringLiteral("多媒体文件 (*.mp4 *.avi *.mkv *.mp3 *.aac)"));
     if (filename.isEmpty()) return;
 
-    m_player->SetFileName(filename);
+//    m_player->SetFileName(filename);
 
-
+    m_player->SetFileName("G:\\Resource\\Room.mp4");
+    m_player->Play();
 
 //    ui->playWidget->setCurrentWidget(ui->videoPage);
 //    ui->playWidget->show();

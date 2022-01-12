@@ -2,8 +2,6 @@
 
 #include <QDebug>
 
-#include "codecformatspec.h"
-
 extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
@@ -12,7 +10,10 @@ extern "C" {
 #include <libswscale/swscale.h>
 }
 
+#include "codecformatspec.h"
+
 Decode::Decode()
+    :m_codec(nullptr), m_decodeCtx(nullptr)
 {
 
 }
@@ -37,6 +38,8 @@ int Decode::Open(AVCodecParameters* par)
         qDebug() << "can't avcodec_alloc_context3 : " << par->codec_id;
         return -1;
     }
+    qDebug() << "OVER CODEC";
+
     // 根据提供的编解码器参数中的值填充编解码器上下文 AvcodeContext
     ret = avcodec_parameters_to_context(m_decodeCtx, par);
     if (ret < 0) {
@@ -54,6 +57,7 @@ int Decode::Open(AVCodecParameters* par)
         return ret;
     }
 
+    qDebug() << "OVER CODEC";
     return 0;
 }
 
