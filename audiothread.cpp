@@ -8,9 +8,11 @@
 
 extern "C" {
 #include <libavformat/avformat.h>
+#include <libavutil/samplefmt.h>
+
 }
 
-#define MAX_LIST_SIZE 100
+#define MAX_LIST_SIZE 1000
 
 AudioThread::AudioThread()
 {
@@ -47,6 +49,13 @@ bool AudioThread::Init(AVCodecParameters *par, AudioSwrSpec *outSpec)
     if (!re)
         return false;
 
+#if 1
+    outFile.setFileName("D:/out.pcm" );
+    if (!outFile.open(QFile::WriteOnly)) {
+        qDebug() << "file open error: test.pcm";
+        return false;
+    }
+#endif
     return true;
 }
 
@@ -70,7 +79,6 @@ void AudioThread::Push(AVPacket *pkt)
 void AudioThread::run()
 {
     while (!m_StopStatus) {
-        //cout << __FUNCTION__ << endl;
 
         if (!m_decode || !m_as)
             return;
@@ -79,7 +87,7 @@ void AudioThread::run()
 
         if (m_pktList.empty()) {
             mutex.unlock();
-            msleep(10);
+            msleep(100);
             continue;
         }
 
@@ -95,8 +103,6 @@ void AudioThread::run()
         while (!m_StopStatus) {
             AVFrame* frame = m_decode->RecvFrame();
             if (!frame) break;
-            //cout << "RecvFrame " << endl;
-            //outFile.write((char *)frame->data[0], frame->linesize[0]);
 #if 1
             AVFrame *outFrame = m_as->AllocFrameData();
             if (!outFrame) {
@@ -105,9 +111,15 @@ void AudioThread::run()
             }
 
             int size = m_as->SwrConvertByFrame(frame, outFrame);
-            //cout << "RecvFrame size " << size << endl;
+            qDebug() << "RecvFrame size " << size;
+
+
+            size_t linesize = frame->nb_samples * av_get_bytes_per_sample((AVSampleFormat)frame->format);
+            qDebug() << "linesize:" << linesize;
+
+//            outFile.write((char *)outFrame->data[0], size);
+#endif
             while (!m_StopStatus) {
-                if (size <= 0)	break;
                 bool re = m_ad->Write(outFrame->data[0], size);
                 if (!re) {
                     msleep(1);
@@ -116,7 +128,7 @@ void AudioThread::run()
                 }
                 break;
             }
-#endif
         }
     }
+    outFile.close();
 }

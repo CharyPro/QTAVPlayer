@@ -34,10 +34,11 @@ MainWindow::MainWindow(QWidget *parent)
 //    iow->setGeometry(center_x, center_y,
 //                            appWindowWidth, appWindowHeight);
 
-//    ui->openGLWidget->Play();
     ui->muteBtn->setEnabled(true);
     connect(ui->muteBtn, SIGNAL(clicked()), this, SLOT(openFileBtn_clicked()));
     m_player = new VideoPlayer();
+    m_player->InitVideoDevice(ui->openGLWidget);
+
 
 }
 

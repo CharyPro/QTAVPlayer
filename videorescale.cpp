@@ -13,7 +13,8 @@ VideoReScale::VideoReScale()
       m_vSwsInFrame(nullptr),
       m_vSwsOutFrame(nullptr)
 {
-
+    m_inputSpec = nullptr;
+    m_outputSpec = nullptr;
 }
 
 
@@ -24,8 +25,11 @@ int VideoReScale::InitSws(VideoSwsSpec *inputSpec, VideoSwsSpec *outputSpec)
     if(outputSpec->width == 0 || outputSpec->height == 0) {
         outputSpec->width = inputSpec->width;
         outputSpec->height = inputSpec->height;
-        outputSpec->pixFmt = AV_PIX_FMT_RGB24;// TODO:输入格式
+        outputSpec->pixFmt = AV_PIX_FMT_YUV420P;// TODO:输入格式
     }
+
+    this->m_inputSpec = inputSpec;
+    this->m_outputSpec = outputSpec;
 
     // Allocate and return an SwsContext. You need it to perform scaling/conversion operations using sws_scale().
     m_vSwsCtx = sws_getContext(inputSpec->width, inputSpec->height, inputSpec->pixFmt,

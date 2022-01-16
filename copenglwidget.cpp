@@ -2,42 +2,14 @@
 
 #include <QTimer>
 
+extern "C" {
+#include <libavutil/frame.h>
+}
 #define V_VER     3
 #define T_VER     4
 #define GET_STR(x)  #x
+//#define M_DEBUG
 
-const char *vstring = GET_STR(
-    attribute vec4 vertexIn;
-    attribute vec2 textureIn;
-    varying vec2 textureOut;
-
-    void main(void)
-    {
-        gl_Position = vertexIn;
-        textureOut  = textureIn;
-    }
-);
-
-const char *tstring = GET_STR(
-    varying vec2 textureOut;
-    uniform sampler2D   tex_y;
-    uniform sampler2D   tex_u;
-    uniform sampler2D   tex_v;
-
-    void main(void)
-    {
-        vec3 yuv;
-        vec3 rgb;
-
-        yuv.x = texture2D(tex_y, textureOut).r;
-        yuv.y = texture2D(tex_u, textureOut).r - 0.5;
-        yuv.z = texture2D(tex_v, textureOut).r - 0.5;
-        rgb = mat3(1.0, 1.0, 1.0,
-            0.0, -0.39465, 2.03211,
-            1.13983, -0.58060, 0.0) * yuv;
-        gl_FragColor = vec4(rgb, 1.0);
-    }
-);
 ///
 /// 对于使用OpenGL来显示视频，原理是使用边界的四个顶点组成四边形作为显示的区域，将视频的每一帧图片当作材质设置在四边形上
 ///
@@ -57,18 +29,78 @@ void COpenGLWidget::Play()
     playStatus = true;
 }
 
+void COpenGLWidget::Init(int width, int height)
+{
+    this->m_width = width;
+    this->m_height = height;
+    qDebug() << __FUNCTION__ << width << " " << height;
+
+    delete datas[0];
+    delete datas[1];
+    delete datas[2];
+    ///分配材质内存空间
+    datas[0] = new char[m_width*m_height];		//Y
+    datas[1] = new char[m_width*m_height / 4];	//U
+    datas[2] = new char[m_width*m_height / 4];	//V
+
+    InitTexture();
+}
+
+void COpenGLWidget::Repaint(AVFrame *frame)
+{
+    //容错，保证尺寸正确
+    if (!datas[0] || m_width*m_height == 0 || frame->width != m_width || frame->height != m_height)
+    {
+        av_frame_free(&frame);
+        return;
+    }
+
+    if (m_width == frame->linesize[0]) //无需对齐
+    {
+        memcpy(datas[0], frame->data[0], m_width*m_height);
+        memcpy(datas[1], frame->data[1], m_width*m_height / 4);
+        memcpy(datas[2], frame->data[2], m_width*m_height / 4);
+    }
+    else//行对齐问题
+    {
+        for (int i = 0; i < m_height; i++) //Y
+            memcpy(datas[0] + m_width * i, frame->data[0] + frame->linesize[0] * i, m_width);
+        for (int i = 0; i < m_height / 2; i++) //U
+            memcpy(datas[1] + m_width / 2 * i, frame->data[1] + frame->linesize[1] * i, m_width);
+        for (int i = 0; i < m_height / 2; i++) //V
+            memcpy(datas[2] + m_width / 2 * i, frame->data[2] + frame->linesize[2] * i, m_width);
+    }
+    av_frame_free(&frame);
+
+    qDebug() << __FUNCTION__ << m_width << " " << m_height;
+
+    playStatus = true;
+
+    //刷新显示
+    update();
+}
+
 void COpenGLWidget::paintGL()
 {
-    if(!playStatus)
+#ifdef M_DEBUG
+    if(!playStatus) {
+        QOpenGLWidget::paintGL();
         return;
-
+    }
     if(m_fp.atEnd())
         return;//m_fp.seek(0);
+    qDebug() << __FUNCTION__;
 
     m_fp.read(datas[0], m_width*m_height);
     m_fp.read(datas[1], m_width*m_height/4);
     m_fp.read(datas[2], m_width*m_height/4);
 
+#else
+    if(!playStatus && datas[0] == 0 ) {
+        QOpenGLWidget::paintGL();
+        return;
+    }
+#endif
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texs[0]); //0层绑定到Y材质
     //修改材质内容(复制内存内容)
@@ -141,6 +173,29 @@ void COpenGLWidget::initializeGL()
     //创建材质
     glGenTextures(3, texs);
 
+
+#ifdef M_DEBUG
+    InitTexture();
+
+    ///分配材质内存空间
+    datas[0] = new char[m_width*m_height];		//Y
+    datas[1] = new char[m_width*m_height/4];	//U
+    datas[2] = new char[m_width*m_height/4];	//V
+
+    m_fp.setFileName("G:/out_resu.yuv");
+    if(!m_fp.open(QFile::ReadOnly))
+        qDebug() << "out240x128.yuv file open failed!";
+
+    //启动定时器
+    QTimer *ti = new QTimer(this);
+    connect(ti, SIGNAL(timeout()), this, SLOT(update()));
+    ti->start(40);
+    playStatus = true;
+#endif
+}
+
+void COpenGLWidget::InitTexture()
+{
     // TODO： 此处需要考虑图片格式YUV420或者其它的，下面暂时当作YUV420处理
     //Y
     glBindTexture(GL_TEXTURE_2D, texs[0]);
@@ -166,19 +221,6 @@ void COpenGLWidget::initializeGL()
     //创建材质显卡空间
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, m_width / 2, m_height / 2, 0, GL_RED, GL_UNSIGNED_BYTE, 0);
 
-    ///分配材质内存空间
-    datas[0] = new char[m_width*m_height];		//Y
-    datas[1] = new char[m_width*m_height/4];	//U
-    datas[2] = new char[m_width*m_height/4];	//V
-
-    m_fp.setFileName("D:/Codes/QT/QtOpenGL/out240x128.yuv");
-    if(!m_fp.open(QFile::ReadOnly))
-        qDebug() << "out240x128.yuv file open failed!";
-
-    //启动定时器
-    QTimer *ti = new QTimer(this);
-    connect(ti, SIGNAL(timeout()), this, SLOT(update()));
-    ti->start(40);
 }
 
 void COpenGLWidget::resizeGL(int w, int h)

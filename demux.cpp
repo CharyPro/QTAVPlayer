@@ -65,6 +65,7 @@ AVPacket* Demux::ReadPkt(ErrorType error)
         error = NORMAL_TYPE;
     } else if (ret == AVERROR_EOF) { // 读到了文件的尾部
         error = EOF_TYPE;
+        qDebug() << "EOF_TYPE";
         return nullptr;
     } else {
         char errbuf[1024];
@@ -84,7 +85,7 @@ Demux::MediaType Demux::GetPktType(AVPacket *pkt)
     if(!pkt)    return NONE_TYPE;
 
     if (pkt->stream_index == m_aStreamIndex) { // 读取到的是音频数据
-            return AUDIO_TYPE;
+        return AUDIO_TYPE;
     }
     else if (pkt->stream_index == m_vStreamIndex) { // 读取到的是视频数据
         return VIDEO_TYPE;

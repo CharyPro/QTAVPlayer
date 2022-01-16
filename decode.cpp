@@ -11,6 +11,8 @@ extern "C" {
 }
 
 #include "codecformatspec.h"
+char av_error[AV_ERROR_MAX_STRING_SIZE] = { 0 };
+#define av_err2str(errnum) av_make_error_string(av_error, AV_ERROR_MAX_STRING_SIZE, errnum)
 
 Decode::Decode()
     :m_codec(nullptr), m_decodeCtx(nullptr)
@@ -99,7 +101,7 @@ int Decode::SendPkt(AVPacket *pkt)
         qDebug() << "avcodec_send_packet error" << errbuf;
         return -1;
     }
-
+    qDebug() << "SendPkt Success";
     return 0;
 }
 
@@ -110,8 +112,12 @@ AVFrame* Decode::RecvFrame()
 
     AVFrame *frame = av_frame_alloc();
     // Return decoded output data from a decoder.
-    int re = avcodec_receive_frame(m_decodeCtx, frame);
-    if(re != 0) {
+    int ret = avcodec_receive_frame(m_decodeCtx, frame);
+    if (ret < 0) {
+        if (ret == AVERROR_EOF || ret == AVERROR(EAGAIN))
+            return 0;
+        fprintf(stderr, "Error during decoding (%s)\n", av_err2str(ret));
+
         av_frame_free(&frame);
         return nullptr;
     }

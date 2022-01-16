@@ -1,6 +1,8 @@
 ﻿#ifndef AUDIODEVICE_H
 #define AUDIODEVICE_H
 
+#include <QFile>
+
 class QAudioOutput;
 class QIODevice;
 
@@ -22,6 +24,7 @@ private:
 
     QAudioOutput* output;
     QIODevice* io;
+    QFile fp;
 
     AudioDevice();
 

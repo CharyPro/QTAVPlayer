@@ -6,14 +6,21 @@
 #include "videorescale.h"
 #include "codecformatspec.h"
 #include "IVideoDevice.h"
+extern "C" {
+#include <libavutil/imgutils.h>
 
-#define MAX_LIST_SIZE 100
+}
 
+#define MAX_LIST_SIZE 1000
+
+static uint8_t *video_dst_data[4] = {NULL};
+static int      video_dst_linesize[4];
 
 VideoThread::VideoThread()
     :m_StopStatus(false)
 {
     m_decode = nullptr;
+    m_vs = nullptr;
 }
 
 
@@ -37,18 +44,46 @@ bool VideoThread::Init(AVCodecParameters *par, VideoSwsSpec* outSpec, IVideoDevi
         qDebug() << "InitSws :" << ret;
     }
 
+    this->m_outSpec = outSpec;
     /// 显示窗口  videoDevice
     if (videoDevice) {
         this->m_videoDevice = videoDevice;
         videoDevice->Init(outSpec->width, outSpec->height);
     }
 
+
+    // 打开文件
+    file.setFileName("out.yuv");
+    if (!file.open(QFile::WriteOnly)) {
+        qDebug() << "file open error" ;
+
+        // 关闭输入设备
+        return false;
+    }
+
+    video_dst_file = fopen("out_2.yuv", "wb");
+
+    imageSize = av_image_get_buffer_size(
+                        (AVPixelFormat)outSpec->pixFmt,
+                        outSpec->width, outSpec->height,
+                        1);
+
+
+    ret = av_image_alloc(video_dst_data, video_dst_linesize,
+        m_outSpec->width, m_outSpec->height, (AVPixelFormat)m_outSpec->pixFmt, 1);
+    video_dst_bufsize = ret;
     return re;
 }
 
 void VideoThread::Push(AVPacket *pkt)
 {
     if (!pkt)    return;
+
+//    m_mutex.lock();
+//    if (m_pktList.size() < MAX_LIST_SIZE)//如果已经等于最大值的时候应该继续轮询检测，不能丢弃该pkt
+//        m_pktList.push_back(pkt);
+
+//    m_mutex.unlock();
 
     while (!m_StopStatus) {
         m_mutex.lock();
@@ -59,15 +94,22 @@ void VideoThread::Push(AVPacket *pkt)
             break;
         }
         m_mutex.unlock();
-        msleep(10);
+        msleep(100);
     }
+    qDebug() << "Push Success " << m_pktList.size();
+}
+
+void VideoThread::SetStop(bool status)
+{
+    m_StopStatus = status;
 }
 
 void VideoThread::run()
 {
     while (!m_StopStatus) {
 
-        if (!m_decode || !m_vs)  return;
+        if (m_decode == nullptr || m_vs == nullptr)  return;
+
 
         m_mutex.lock();
 
@@ -75,7 +117,7 @@ void VideoThread::run()
         // TODO: change other ways to deal when m_pktList is empty
         if(m_pktList.empty()) {
             m_mutex.unlock();
-            msleep(10);
+            msleep(2);
             continue;
         }
 
@@ -90,24 +132,50 @@ void VideoThread::run()
         if(ret != 0)
             qDebug() << "Video SendPkt :" << ret;
 
+        qDebug() << "m_StopStatus " <<  m_StopStatus;
         while (!m_StopStatus) {
 
             AVFrame * frame = m_decode->RecvFrame();// receive frame after decode
-            if (!frame) break;
-            qDebug() << "Video RecvFrame ";
-
-            AVFrame *outFrame = m_vs->AllocFrameData();
-            if (!outFrame) {
-                qDebug() << "av_frame_alloc error";
-                return;
+            if (frame == nullptr) {
+                break;
             }
+            qDebug() << "Video RecvFrame " << "imageSize:" << imageSize;
 
-            ret = m_vs->SwsScale(frame, outFrame);
-            if (ret < 0)
-                continue;
+
+//            av_image_copy(video_dst_data, video_dst_linesize,
+//                          (const uint8_t **)(frame->data), frame->linesize,
+//                          m_outSpec->pixFmt,m_outSpec->width, m_outSpec->height);
+
+//            fwrite(video_dst_data[0], 1, video_dst_bufsize, video_dst_file);
+//            AVFrame *outFrame = m_vs->AllocFrameData();
+//            if (!outFrame) {
+//                qDebug() << "av_frame_alloc error";
+//                return;
+//            }
+
+//            ret = m_vs->SwsScale(frame, outFrame);
+//            if (ret < 0)
+//                continue;
             qDebug() << "Prepare Repaint";
-//            if(m_videoDevice)
-//                m_videoDevice->Repaint(outFrame);
+            if(m_videoDevice)
+                m_videoDevice->Repaint(frame);
+
+//            for(int i = 0;i < frame->height;i++){
+//                file.write((char *)(frame->data[0] + i * frame->linesize[0]), frame->width);
+//            }
+
+//            int loop = frame->height / 2;
+//            int len_uv = frame->width / 2;
+
+//            for(int i = 0;i < loop;i++){
+//                file.write((char *)(frame->data[1] + i * frame->linesize[1]), len_uv);
+//            }
+//            for(int i = 0;i < loop;i++){
+//                file.write((char *)(frame->data[2] + i * frame->linesize[2]), len_uv);
+//            }
+//           file.write((const char*)frame->data[0], imageSize);
+
         }
     }
+    file.close();
 }

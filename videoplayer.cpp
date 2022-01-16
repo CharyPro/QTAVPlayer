@@ -22,6 +22,11 @@ void VideoPlayer::SetFileName(QString name)
     m_filename = name;
 }
 
+void VideoPlayer::InitVideoDevice(IVideoDevice *device)
+{
+    this->m_videoDevice = device;
+}
+
 void VideoPlayer::Play()
 {
     // 1. 解封装
@@ -67,7 +72,8 @@ void VideoPlayer::run()
     while (1) {
         // 1.获取解封装后的pkt
         AVPacket *pkt = m_demux->ReadPkt();
-        if(!pkt || pkt->size == 0) {
+        if(pkt == nullptr || pkt->size == 0) {
+//            m_vt->SetStop(true);
             break; // 没有数据了
         }
 
@@ -78,12 +84,17 @@ void VideoPlayer::run()
         // 发送pkt到解码线程
         if (m_demux->GetPktType(pkt) == Demux::AUDIO_TYPE) {
             qDebug() << "Audio Packet";
+            m_at->Push(pkt);
 
         } else if(m_demux->GetPktType(pkt) == Demux::VIDEO_TYPE) {
             qDebug() << "Video Packet";
-//            m_vt->Push(pkt);
+            m_vt->Push(pkt);
         } else {
             continue;
         }
+
+        msleep(10);
     }
+    qDebug() << "OVER";
+
 }

@@ -17,6 +17,7 @@ public:
     VideoPlayer();
 
     void SetFileName(QString name);
+    void InitVideoDevice(IVideoDevice *device);
 
     void Play();
 protected:

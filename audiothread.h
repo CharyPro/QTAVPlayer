@@ -3,6 +3,8 @@
 
 #include <QThread>
 #include <QMutex>
+#include <QFile>
+
 struct AVCodecParameters;
 struct AudioSwrSpec;
 struct AVPacket;
@@ -38,6 +40,8 @@ private:
     QMutex mutex;
     std::list<AVPacket*> m_pktList;
     bool m_StopStatus;
+
+    QFile outFile;
 };
 
 #endif // AUDIOTHREAD_H

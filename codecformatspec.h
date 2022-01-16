@@ -15,7 +15,7 @@ struct AudioSwrSpec {
 struct VideoSwsSpec {
     int width = 0;
     int height = 0;
-    AVPixelFormat pixFmt;
+    AVPixelFormat pixFmt = AV_PIX_FMT_YUV420P;
     int size;
 };
 #endif // CODECFORMATSPEC_H
