@@ -10,6 +10,7 @@ extern "C" {
 #include <libavutil/imgutils.h>
 
 }
+#include "TimeBase.h"
 
 #define MAX_LIST_SIZE 1000
 
@@ -24,13 +25,14 @@ VideoThread::VideoThread()
 }
 
 
-bool VideoThread::Init(AVCodecParameters *par, VideoSwsSpec* outSpec, IVideoDevice* videoDevice)
+bool VideoThread::Init(AVCodecParameters *par, VideoSwsSpec* outSpec, AVStream* stream, IVideoDevice* videoDevice)
 {
     bool re = true;
 
+    v_stream = stream;
     /// 打开解码器
     if (!m_decode)     m_decode = new Decode();
-    int ret = m_decode->Open(par);
+    int ret = m_decode->Open(par, stream);
     if (ret < 0) {
         re = false;
         qDebug() << "OpenDecode :" << ret;
@@ -104,6 +106,16 @@ void VideoThread::SetStop(bool status)
     m_StopStatus = status;
 }
 
+void VideoThread::SetSycClock(double a_clock)
+{
+    m_clocks = a_clock;
+}
+
+double VideoThread::GetClockTime()
+{
+    return _vTime;
+}
+
 void VideoThread::run()
 {
     while (!m_StopStatus) {
@@ -117,7 +129,7 @@ void VideoThread::run()
         // TODO: change other ways to deal when m_pktList is empty
         if(m_pktList.empty()) {
             m_mutex.unlock();
-            msleep(2);
+//            msleep(2);
             continue;
         }
 
@@ -127,6 +139,18 @@ void VideoThread::run()
         m_pktList.pop_front();
 
         m_mutex.unlock();
+
+        // 视频时钟
+        if (pkt->dts != AV_NOPTS_VALUE) {
+            _vTime = av_q2d(v_stream->time_base) * pkt->dts;
+        }
+
+        double time = TimeBase::GetInterface().GetBaseTime();
+
+        while(_vTime > time) {
+            time = TimeBase::GetInterface().GetBaseTime();
+            msleep(10);
+        }
 
         int ret = m_decode->SendPkt(pkt);
         if(ret != 0)

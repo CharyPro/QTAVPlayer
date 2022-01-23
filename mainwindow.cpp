@@ -55,9 +55,9 @@ void MainWindow::openFileBtn_clicked()
                        QStringLiteral("多媒体文件 (*.mp4 *.avi *.mkv *.mp3 *.aac)"));
     if (filename.isEmpty()) return;
 
-//    m_player->SetFileName(filename);
+    m_player->SetFileName(filename);
 
-    m_player->SetFileName("G:\\Resource\\Room.mp4");
+//    m_player->SetFileName("G:\\Resource\\Room.mp4");
     m_player->Play();
 
 //    ui->playWidget->setCurrentWidget(ui->videoPage);

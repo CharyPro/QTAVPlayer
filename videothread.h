@@ -13,6 +13,7 @@ struct VideoSwsSpec;
 class IVideoDevice;
 class VideoReScale;
 struct AVPacket;
+struct AVStream;
 
 class VideoThread : public QThread
 {
@@ -24,7 +25,7 @@ public:
      * @param par
      * @return
      */
-    bool Init(AVCodecParameters *par, VideoSwsSpec* outSpec, IVideoDevice* videoDevice);
+    bool Init(AVCodecParameters *par, VideoSwsSpec* outSpec, AVStream *stream, IVideoDevice* videoDevice);
 
 
     /**
@@ -34,6 +35,11 @@ public:
     void Push(AVPacket* pkt);
 
     void SetStop(bool status);
+
+    void SetSycClock(double );
+
+    double GetClockTime();
+
 
 protected:
     virtual void run() Q_DECL_OVERRIDE;
@@ -48,12 +54,16 @@ private:
     VideoSwsSpec* m_outSpec;
     bool m_StopStatus;
     QList<AVPacket*> m_pktList;
+    AVStream *v_stream;
 
 
     QFile file;
     FILE *video_dst_file = NULL;
     int imageSize;
     int video_dst_bufsize;
+
+    double _vTime = 0;
+    double m_clocks = 9999;
 };
 
 #endif // VIDEOTHREAD_H

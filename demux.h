@@ -5,7 +5,7 @@
 class AVCodecParameters;
 class AVFormatContext;
 class AVPacket;
-
+struct AVStream;
 
 class Demux
 {
@@ -32,6 +32,9 @@ public:
 
     AVCodecParameters* CopyVideoPara();
     AVCodecParameters* CopyAudioPara();
+
+    AVStream* CopyVideoStream();
+    AVStream* CopyAudioStream();
 
 private:
     AVFormatContext* m_fmtCtx = nullptr;

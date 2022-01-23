@@ -13,6 +13,7 @@ struct AVCodecContext;
 class Decode;
 class AudioReSample;
 class AudioDevice;
+struct AVStream;
 
 class AudioThread : public QThread
 {
@@ -24,9 +25,11 @@ public:
      * @param par
      * @return  >= 0 on success, a negative AVERROR code on failure.
      */
-    bool Init(AVCodecParameters *par, AudioSwrSpec* outSpec);
+    bool Init(AVCodecParameters *par, AVStream *stream, AudioSwrSpec* outSpec);
 
     void Push(AVPacket *pkt);
+
+    double GetClockTime();
 
 protected:
     virtual void run() Q_DECL_OVERRIDE;
@@ -42,6 +45,9 @@ private:
     bool m_StopStatus;
 
     QFile outFile;
+
+    AVStream* m_stream;
+    double a_clock = 0;
 };
 
 #endif // AUDIOTHREAD_H

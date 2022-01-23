@@ -20,7 +20,7 @@ Decode::Decode()
 
 }
 
-int Decode::Open(AVCodecParameters* par)
+int Decode::Open(AVCodecParameters* par, AVStream* stream)
 {
     int ret = 0;
     if (!par) return -1;
@@ -58,6 +58,8 @@ int Decode::Open(AVCodecParameters* par)
         qDebug() << "avcodec_open2 : " << par->codec_id;
         return ret;
     }
+
+    this->stream = stream;
 
     qDebug() << "OVER CODEC";
     return 0;
@@ -105,6 +107,22 @@ int Decode::SendPkt(AVPacket *pkt)
     return 0;
 }
 
+double Decode::synchronize(AVFrame *srcFrame, double pts)
+{
+    double frame_delay;
+
+//    if (pts != 0)
+//        video_clock = pts; // Get pts,then set video clock to it
+//    else
+//        pts = video_clock; // Don't get pts,set it to video clock
+
+//    frame_delay = av_q2d(stream->codec->time_base);
+//    frame_delay += srcFrame->repeat_pict * (frame_delay * 0.5);
+
+//    video_clock += frame_delay;
+
+    return pts;
+}
 AVFrame* Decode::RecvFrame()
 {
     if (!m_decodeCtx)
@@ -121,6 +139,21 @@ AVFrame* Decode::RecvFrame()
         av_frame_free(&frame);
         return nullptr;
     }
+
+    // 音视频同步相关代码
+
+#if 0
+
+    double pts;
+    if ((pts = av_frame_get_best_effort_timestamp(frame)) == AV_NOPTS_VALUE)
+        pts = 0;
+
+    pts *= av_q2d(stream->time_base);
+
+    pts = video->synchronize(frame, pts);
+
+    frame->opaque = &pts;
+#endif
 
     qDebug() << "[" << frame->linesize[0] << "] ";
     return frame;

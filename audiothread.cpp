@@ -11,8 +11,9 @@ extern "C" {
 #include <libavutil/samplefmt.h>
 
 }
+#include "TimeBase.h"
 
-#define MAX_LIST_SIZE 1000
+#define MAX_LIST_SIZE 100
 
 AudioThread::AudioThread()
 {
@@ -23,13 +24,15 @@ AudioThread::AudioThread()
     m_StopStatus = false;
 }
 
-bool AudioThread::Init(AVCodecParameters *par, AudioSwrSpec *outSpec)
+bool AudioThread::Init(AVCodecParameters *par, AVStream* stream, AudioSwrSpec *outSpec)
 {
     bool re = true;
 
+    m_stream = stream;
+
     // open decoder
     if (!m_decode)     m_decode = new Decode();
-    int ret = m_decode->Open(par);
+    int ret = m_decode->Open(par, stream);
     if (ret < 0) {
         re = false;
         qDebug() << "OpenDecode :" << ret;
@@ -76,6 +79,11 @@ void AudioThread::Push(AVPacket *pkt)
     }
 }
 
+double AudioThread::GetClockTime()
+{
+    return a_clock;
+}
+
 void AudioThread::run()
 {
     while (!m_StopStatus) {
@@ -87,7 +95,7 @@ void AudioThread::run()
 
         if (m_pktList.empty()) {
             mutex.unlock();
-            msleep(100);
+//            msleep(100);
             continue;
         }
 
@@ -95,6 +103,13 @@ void AudioThread::run()
         m_pktList.pop_front();
 
         mutex.unlock();
+
+
+        // 保存音频时钟
+        if (pkt->pts != AV_NOPTS_VALUE)
+            a_clock = av_q2d(m_stream->time_base) * pkt->pts;
+
+        TimeBase::GetInterface().SetBaseTime(a_clock);
 
         int ret = m_decode->SendPkt(pkt);
         if(ret != 0)

@@ -25,6 +25,7 @@ SOURCES += \
 
 HEADERS += \
     IVideoDevice.h \
+    TimeBase.h \
     audiodevice.h \
     audioresample.h \
     audiothread.h \

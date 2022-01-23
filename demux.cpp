@@ -109,6 +109,20 @@ AVCodecParameters* Demux::CopyVideoPara()
     qDebug() << __FUNCTION__ << p->codec_id;
     return p;
 }
+
+AVStream* Demux::CopyVideoStream()
+{
+    AVStream *frame = m_fmtCtx->streams[m_vStreamIndex];
+
+    return frame;
+}
+
+AVStream* Demux::CopyAudioStream()
+{
+    AVStream *frame = m_fmtCtx->streams[m_aStreamIndex];
+
+    return frame;
+}
 /**
  * @brief DemuxThread::CopyAudioPara
  * @return  具有音频编码流的属性 AVCodecParameters ，在解码时需要音频流的编码ID

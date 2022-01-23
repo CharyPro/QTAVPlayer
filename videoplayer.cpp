@@ -45,7 +45,7 @@ void VideoPlayer::Play()
     outputASpec->chLayout = AV_CH_LAYOUT_STEREO;
     outputASpec->chs = av_get_channel_layout_nb_channels(outputASpec->chLayout);
 
-    bool re = m_at->Init(m_demux->CopyAudioPara(), outputASpec);
+    bool re = m_at->Init(m_demux->CopyAudioPara(), m_demux->CopyAudioStream(), outputASpec);
     if (!re) {
         return;
     }
@@ -53,7 +53,7 @@ void VideoPlayer::Play()
 
     VideoSwsSpec *outputVSpec = new VideoSwsSpec();
 
-    re = m_vt->Init(m_demux->CopyVideoPara(), outputVSpec, m_videoDevice);
+    re = m_vt->Init(m_demux->CopyVideoPara(), outputVSpec,  m_demux->CopyVideoStream(), m_videoDevice);
     if (!re)
         return;
     qDebug() << "VideoThread Init Success";
@@ -93,7 +93,7 @@ void VideoPlayer::run()
             continue;
         }
 
-        msleep(10);
+//        msleep(10);
     }
     qDebug() << "OVER";
 
