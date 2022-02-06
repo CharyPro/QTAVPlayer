@@ -29,6 +29,10 @@ void VideoPlayer::InitVideoDevice(IVideoDevice *device)
 
 void VideoPlayer::Play()
 {
+    if (m_state != Stopped) return;
+
+    setState(Playing);
+
     // 1. 解封装
     m_demux = new Demux();
     if (!m_demux->Open(m_filename))
@@ -38,6 +42,7 @@ void VideoPlayer::Play()
     //初始化解码器
     m_vt = new VideoThread();
     m_at = new AudioThread();
+    connect(m_at, &AudioThread::sig_updateTime, this, &VideoPlayer::sig_timeChanged);
 
     AudioSwrSpec *outputASpec = (struct AudioSwrSpec *)malloc(sizeof(struct AudioSwrSpec));
     outputASpec->sampleFmt = AV_SAMPLE_FMT_S16;
@@ -58,10 +63,51 @@ void VideoPlayer::Play()
         return;
     qDebug() << "VideoThread Init Success";
 
-
+    VideoDesc desc = {outputVSpec->width, outputVSpec->height, m_demux->GetDuration()};
+    emit sig_initFinished(&desc);
     // 2. 开始解封装-》解码-》显示
     this->start();
 
+}
+
+
+void VideoPlayer::setStop(bool playover)
+{
+    if(m_state == Stopped) return;
+
+    m_state = Stopped;
+
+    if(playover) {
+        while(m_vt->HasRemainFrames() && m_at->HasRemainFrames()) {
+            msleep(5);
+            continue;
+        }
+    }
+
+    //释放资源
+    //线程停止
+    m_vt->SetStop();
+    m_at->SetStop();
+
+    emit sig_stateChanged(m_state);
+}
+
+void VideoPlayer::setPause(bool pause)
+{
+
+    if(pause)
+        setState(Paused);
+    else
+        setState(Playing);
+
+    //线程暂停
+    m_vt->SetPause(pause);
+    m_at->SetPause(pause);
+}
+
+void VideoPlayer::setTime(int seekTime)
+{
+    m_seekTime = seekTime;
 }
 
 void VideoPlayer::run()
@@ -69,11 +115,27 @@ void VideoPlayer::run()
     m_vt->start();
     m_at->start();
 
-    while (1) {
+    while (m_state != Stopped) {
+
+        if (m_state == Paused) {
+            msleep(5);
+            continue;
+        }
+
+        if(m_seekTime > 0 && m_demux->SeekFrame(m_seekTime)) {
+            // 清空之前读取的数据包
+            m_at->ClearPktList();
+//            m_at->ClearClockTime();
+
+            m_vt->ClearPktList();
+            m_vt->ClearClockTime();
+
+            m_seekTime = -1;
+        }
+
         // 1.获取解封装后的pkt
         AVPacket *pkt = m_demux->ReadPkt();
         if(pkt == nullptr || pkt->size == 0) {
-//            m_vt->SetStop(true);
             break; // 没有数据了
         }
 
@@ -95,6 +157,17 @@ void VideoPlayer::run()
 
 //        msleep(10);
     }
+
+    setStop(true);
+
     qDebug() << "OVER";
 
+}
+
+void VideoPlayer::setState(State s)
+{
+    if(m_state == s) return;
+
+    m_state = s;
+    emit sig_stateChanged(m_state);
 }

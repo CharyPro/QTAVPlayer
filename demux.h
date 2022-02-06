@@ -11,7 +11,6 @@ class Demux
 {
 public:
 
-
     enum MediaType {
         AUDIO_TYPE,
         VIDEO_TYPE,
@@ -26,6 +25,8 @@ public:
 
     Demux();
     bool Open(QString file);
+    int GetDuration();
+
     AVPacket* ReadPkt(ErrorType errtype = NORMAL_TYPE);
 
     MediaType GetPktType(AVPacket* pkt);
@@ -35,6 +36,8 @@ public:
 
     AVStream* CopyVideoStream();
     AVStream* CopyAudioStream();
+
+    bool SeekFrame(int time);
 
 private:
     AVFormatContext* m_fmtCtx = nullptr;

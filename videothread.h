@@ -33,13 +33,18 @@ public:
      * @param pkt
      */
     void Push(AVPacket* pkt);
+    void ClearPktList();
 
-    void SetStop(bool status);
+    void SetPause(bool);
+
+    void SetStop();
+
+    bool HasRemainFrames();
 
     void SetSycClock(double );
 
     double GetClockTime();
-
+    void ClearClockTime();
 
 protected:
     virtual void run() Q_DECL_OVERRIDE;
@@ -47,6 +52,8 @@ protected:
 private:
     Decode* m_decode;
     QMutex m_mutex;
+
+    bool m_isPause{false};
 
     VideoReScale *m_vs = nullptr;
     IVideoDevice* m_videoDevice = nullptr;

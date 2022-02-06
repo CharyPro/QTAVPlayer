@@ -62,6 +62,25 @@ bool AudioThread::Init(AVCodecParameters *par, AVStream* stream, AudioSwrSpec *o
     return true;
 }
 
+void AudioThread::SetPause(bool v)
+{
+    m_isPause = v;
+}
+
+void AudioThread::SetStop()
+{
+    m_StopStatus = true;
+}
+
+bool AudioThread::HasRemainFrames()
+{
+    if(m_pktList.empty()) {
+        return false;
+    }
+
+    return true;
+}
+
 void AudioThread::Push(AVPacket *pkt)
 {
     if (!pkt)    return;
@@ -79,9 +98,25 @@ void AudioThread::Push(AVPacket *pkt)
     }
 }
 
+void AudioThread::ClearPktList()
+{
+    mutex.lock();
+    for (AVPacket* pkt : m_pktList) {
+        av_packet_unref(pkt);
+    }
+    m_pktList.clear();
+    mutex.unlock();
+}
+
 double AudioThread::GetClockTime()
 {
     return a_clock;
+}
+
+void AudioThread::ClearClockTime()
+{
+    a_clock = 0;
+    TimeBase::GetInterface().SetBaseTime(a_clock);
 }
 
 void AudioThread::run()
@@ -90,6 +125,11 @@ void AudioThread::run()
 
         if (!m_decode || !m_as)
             return;
+
+        if (m_isPause) {
+            msleep(5);
+            continue;
+        }
 
         mutex.lock();
 
@@ -106,9 +146,11 @@ void AudioThread::run()
 
 
         // 保存音频时钟
-        if (pkt->pts != AV_NOPTS_VALUE)
+        if (pkt->pts != AV_NOPTS_VALUE) {
             a_clock = av_q2d(m_stream->time_base) * pkt->pts;
-
+            // 改变时间
+            emit sig_updateTime(a_clock);
+        }
         TimeBase::GetInterface().SetBaseTime(a_clock);
 
         int ret = m_decode->SendPkt(pkt);

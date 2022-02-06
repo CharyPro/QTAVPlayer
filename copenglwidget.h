@@ -17,6 +17,7 @@ public:
     ~COpenGLWidget();
 
     void Play();
+    void SetStatus(bool);
 
 protected:
     virtual void Init(int width, int height) Q_DECL_OVERRIDE;
@@ -28,7 +29,7 @@ protected:
 
 
 private:
-    bool playStatus = false;
+    bool playStatus{true};
     FILE* fp;
     QString m_videofile;
     QFile m_fp;

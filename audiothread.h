@@ -17,6 +17,8 @@ struct AVStream;
 
 class AudioThread : public QThread
 {
+    Q_OBJECT
+
 public:
     AudioThread();
 
@@ -27,12 +29,24 @@ public:
      */
     bool Init(AVCodecParameters *par, AVStream *stream, AudioSwrSpec* outSpec);
 
+    void SetPause(bool);
+
+    void SetStop();
+
+    bool HasRemainFrames();
+
     void Push(AVPacket *pkt);
 
+    void ClearPktList();
+
     double GetClockTime();
+    void ClearClockTime();
 
 protected:
     virtual void run() Q_DECL_OVERRIDE;
+
+signals:
+    void sig_updateTime(double);
 
 private:
     Decode *m_decode;
@@ -43,6 +57,8 @@ private:
     QMutex mutex;
     std::list<AVPacket*> m_pktList;
     bool m_StopStatus;
+    bool m_isPause{false};
+
 
     QFile outFile;
 

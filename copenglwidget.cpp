@@ -29,6 +29,12 @@ void COpenGLWidget::Play()
     playStatus = true;
 }
 
+void COpenGLWidget::SetStatus(bool isplay)
+{
+    playStatus = isplay;
+    update();
+}
+
 void COpenGLWidget::Init(int width, int height)
 {
     this->m_width = width;
@@ -74,7 +80,7 @@ void COpenGLWidget::Repaint(AVFrame *frame)
 
     qDebug() << __FUNCTION__ << m_width << " " << m_height;
 
-    playStatus = true;
+//    playStatus = true;
 
     //刷新显示
     update();
@@ -96,7 +102,15 @@ void COpenGLWidget::paintGL()
     m_fp.read(datas[2], m_width*m_height/4);
 
 #else
-    if(!playStatus && datas[0] == 0 ) {
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    qDebug() << __FUNCTION__ << playStatus;
+
+//    if(!playStatus ) {
+//        QOpenGLWidget::paintGL();
+//        return;
+//    }
+
+    if(!playStatus || datas[0] == 0 ) {
         QOpenGLWidget::paintGL();
         return;
     }

@@ -15,6 +15,7 @@ SOURCES += \
     copenglwidget.cpp \
     decode.cpp \
     demux.cpp \
+    encryptwidget.cpp \
     iowidget.cpp \
     main.cpp \
     mainwindow.cpp \
@@ -33,6 +34,7 @@ HEADERS += \
     copenglwidget.h \
     decode.h \
     demux.h \
+    encryptwidget.h \
     iowidget.h \
     mainwindow.h \
     videoplayer.h \
@@ -41,6 +43,7 @@ HEADERS += \
     videothread.h
 
 FORMS += \
+    encryptwidget.ui \
     mainwindow.ui
 
 # Default rules for deployment.

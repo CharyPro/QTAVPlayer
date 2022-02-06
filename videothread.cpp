@@ -77,6 +77,16 @@ bool VideoThread::Init(AVCodecParameters *par, VideoSwsSpec* outSpec, AVStream* 
     return re;
 }
 
+void VideoThread::ClearPktList()
+{
+    m_mutex.lock();
+    for (AVPacket* pkt : m_pktList) {
+        av_packet_unref(pkt);
+    }
+    m_pktList.clear();
+    m_mutex.unlock();
+}
+
 void VideoThread::Push(AVPacket *pkt)
 {
     if (!pkt)    return;
@@ -101,9 +111,23 @@ void VideoThread::Push(AVPacket *pkt)
     qDebug() << "Push Success " << m_pktList.size();
 }
 
-void VideoThread::SetStop(bool status)
+void VideoThread::SetPause(bool v)
 {
-    m_StopStatus = status;
+    m_isPause = v;
+}
+
+void VideoThread::SetStop()
+{
+    m_StopStatus = true;
+}
+
+bool VideoThread::HasRemainFrames()
+{
+    if(m_pktList.empty()) {
+        return false;
+    }
+
+    return true;
 }
 
 void VideoThread::SetSycClock(double a_clock)
@@ -116,12 +140,21 @@ double VideoThread::GetClockTime()
     return _vTime;
 }
 
+void VideoThread::ClearClockTime()
+{
+    _vTime = 0;
+}
+
 void VideoThread::run()
 {
     while (!m_StopStatus) {
 
         if (m_decode == nullptr || m_vs == nullptr)  return;
 
+        if (m_isPause) {
+            msleep(5);
+            continue;
+        }
 
         m_mutex.lock();
 
@@ -148,6 +181,7 @@ void VideoThread::run()
         double time = TimeBase::GetInterface().GetBaseTime();
 
         while(_vTime > time) {
+            qDebug() << "_vTime:" << _vTime << " time:" << time;
             time = TimeBase::GetInterface().GetBaseTime();
             msleep(10);
         }

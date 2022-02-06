@@ -31,10 +31,7 @@
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout_3">
           <item>
-           <widget class="QPushButton" name="playBtn">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
+           <widget class="QPushButton" name="openFileBtn">
             <property name="maximumSize">
              <size>
               <width>40</width>
@@ -42,7 +39,23 @@
              </size>
             </property>
             <property name="text">
-             <string>播放</string>
+             <string>打开</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="playBtn">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>80</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>播放/暂停</string>
             </property>
            </widget>
           </item>
@@ -144,7 +157,7 @@
          </layout>
         </item>
         <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_4" stretch="2,10,2">
+         <layout class="QHBoxLayout" name="horizontalLayout_4" stretch="2,10,2,0">
           <item>
            <widget class="QPushButton" name="muteBtn">
             <property name="enabled">
@@ -213,6 +226,19 @@
             </property>
             <property name="alignment">
              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="toolBtn">
+            <property name="maximumSize">
+             <size>
+              <width>40</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>工具</string>
             </property>
            </widget>
           </item>

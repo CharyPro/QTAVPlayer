@@ -54,6 +54,32 @@ bool Demux::Open(QString m_filename)
 
 }
 
+int Demux::GetDuration()
+{
+    AVRational duration;
+    duration.num = 1;
+    duration.den = AV_TIME_BASE;
+    return m_fmtCtx ? round(m_fmtCtx->duration * av_q2d(duration)) : 0;
+}
+
+bool Demux::SeekFrame(int _seekTime)
+{
+    // 现实时间 -> 时间戳
+    AVRational timeBase = m_fmtCtx->streams[m_aStreamIndex]->time_base;
+    int64_t ts = _seekTime / av_q2d(timeBase);
+    int ret = av_seek_frame(m_fmtCtx, m_aStreamIndex, ts, AVSEEK_FLAG_BACKWARD);
+
+    if (ret < 0) { // seek失败
+        qDebug() << "seek fail:" << _seekTime << ts << m_aStreamIndex;
+        _seekTime = -1;
+        return false;
+    } else {
+        qDebug() << "seek Success:" << _seekTime << ts << m_aStreamIndex;
+
+        return true;
+    }
+}
+
 // 记得释放 av_packet_free
 AVPacket* Demux::ReadPkt(ErrorType error)
 {
